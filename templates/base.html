@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Posts</title>
+        {% block css %}
+        	<!-- Font Awesome -->
+			<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+			<!-- Bootstrap core CSS -->
+			<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+			<!-- Material Design Bootstrap -->
+			<link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">
+		{% endblock css %}
+    </head>
+    <body>
+    	<div class="container">
+	    	{% block content %}{% endblock content %}
+	    </div>
+	    {% block javascript %}
+	    	<!-- JQuery -->
+			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+			<!-- Bootstrap tooltips -->
+			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+			<!-- Bootstrap core JavaScript -->
+			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
+			<!-- MDB core JavaScript -->
+			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
+	    	
+			{% include "components/my-js.html" %}
+			<script>
+				$(function () {
+				  $('[data-toggle="tooltip"]').tooltip()
+				});
+			</script>
+			<script>
+				function getCookie(name) {
+			        let cookieValue = null;
+			        if (document.cookie && document.cookie !== '') {
+			            const cookies = document.cookie.split(';');
+			            for (let i = 0; i < cookies.length; i++) {
+			                const cookie = cookies[i].trim();
+			                // Does this cookie string begin with the name we want?
+			                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+			                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+			                    break;
+			                }
+			            }
+			        }
+			        return cookieValue;
+			    }
+			    const csrftoken = getCookie('csrftoken');
+			</script>
+	    {% endblock javascript %}
+	    {% block extra_scripts %}
+	    	
+	    {% endblock extra_scripts %}
+    </body>
+</html>

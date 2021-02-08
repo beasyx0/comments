@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mt-3 mb-3">
+	<h3>Edit Comment</h3>
+  <form method="post">
+    {% csrf_token %}
+    {{comment_edit_form}}
+    <button type="submit" class="btn btn-outline-danger btn-sm">Submit</button>
+    <small><a class="text-muted" href="{{ comment.post.get_absolute_url }}#comment_{{ comment.public_id }}">back to post</a></small>
+  </form>
+</div>
+
+{% endblock content %}
+
+{% block extra_scripts %}
+
+{% endblock extra_scripts %}
