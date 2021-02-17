@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
@@ -112,6 +113,8 @@ def like_comment(request):
                         status=status)
 
 
+@login_required
+@require_http_methods(["POST"])
 def dislike_comment(request):
     '''Dislikes a comment. Called from jquery ajax'''
     disliked = None
@@ -135,27 +138,32 @@ def dislike_comment(request):
                         status=status)
 
 
+@login_required
+@require_http_methods(["POST"])
 def flag_comment(request, comment_id):
     '''Flags a comment and redirects back based on the comments \
     visibility after being flagged'''
     user = request.user
     comment = get_object_or_404(Comment, public_id=comment_id)
-    if request.method == 'POST':
-        comment_flag_form = CommentFlagForm(request.POST or None)
-        if comment_flag_form.is_valid():
-            new_flag = comment_flag_form.save(commit=False)
-            new_flag.user = request.user # add current user
-            new_flag.comment = comment # add specified comment
-            new_flag.save() # comments.signals.comment_check_flag_limit
-            comment.refresh_from_db() # see if the signal toggled visibility
-            if comment.visible: # redirect back to comment if still visible
-                return redirect(
-                    str(comment.post.get_absolute_url()) 
-                    + '#comment_' 
-                    + str(comment.public_id)
-                    )
-            else: # or back to the comments section
-                return redirect(
-                    str(comment.post.get_absolute_url()) 
-                    + '#comments'
-                    )
+    # how many times has this person flagged this comment
+    user_flag_count = user.comment_flags.all().filter(comment=comment).count()
+    comment_flag_form = CommentFlagForm(request.POST or None)
+    comment_url = str(comment.post.get_absolute_url()) + '#comment_' + str(comment.public_id)
+    comments_section_url = str(comment.post.get_absolute_url()) + '#comments'
+    if user_flag_count >= 3: # if already flagged 3 times redirect with message
+        messages.error(request, 'You already flagged that one enough. Thanks.')
+        return redirect(comment_url)
+    if comment_flag_form.is_valid():
+        new_flag = comment_flag_form.save(commit=False)
+        new_flag.user = request.user # add current user
+        new_flag.comment = comment # add specified comment
+        new_flag.save() # comments.signals.comment_check_flag_limit
+        messages.success(request, f'Comment Flagged. Thanks {user.username}!') # message for user
+        comment.refresh_from_db() # see if the signal toggled visibility
+        if comment.visible: # redirect back to comment if still visible
+            return redirect(comment_url)
+        else: # or back to the comments section
+            return redirect(comments_section_url)
+    else: # if form is not valid back to the comment with a message
+        messages.error('Something went wrong, please try again')
+        return redirect(comment_url)

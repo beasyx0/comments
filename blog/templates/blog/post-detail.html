@@ -46,26 +46,28 @@
                 <div class="mb-2">{{comment.content}}</div>
 
                 <div class="d-flex justify-content-between">
-                    <!-- modal button -->
-                    <div>
-	                    {% if user.is_authenticated %}
-		                    <button type="button" class="reply btn btn-outline-danger btn-sm" name="{{ comment.public_id }}">Reply</button>
-                        <a class="text-muted" href="{% url 'comment-edit' comment_id=comment.public_id post_id=post.id %}?next={{ request.get_full_path }}"><small>edit |</small></a>
-                        <a class="text-muted" href="{% url 'comment-delete-confirm' comment_id=comment.public_id post_id=post.id %}?next={{ request.get_full_path }}"><small>delete</small></a>
-	                    {% endif %}
+                  <!-- modal button -->
+                  <div>
+                    {% if user.is_authenticated %}
+	                    <button type="button" class="reply btn btn-outline-danger btn-sm" name="{{ comment.public_id }}">Reply</button>
+                      <a class="text-muted" href="{% url 'comment-edit' comment_id=comment.public_id post_id=post.id %}?next={{ request.get_full_path }}"><small>edit |</small></a>
+                      <a class="text-muted" href="{% url 'comment-delete-confirm' comment_id=comment.public_id post_id=post.id %}?next={{ request.get_full_path }}"><small>delete</small></a>
+                    {% else %}
+                      <p><a class="btn btn-outline-success btn-sm" href="#">login to comment</a></p>
+                    {% endif %}
                 	</div>
-                    <div class="pt-3">
+                  <div class="pt-3">
 
-                    	<a class="like" name="{{ comment.public_id }}" data-toggle="tooltip" data-html="true" title="{% for user in comment.likes.all %}<span>{{user.username}}</span><br>{% endfor %}"><i class="fas fa-thumbs-up {% if request.user in comment.likes.all %}text-primary{% else %}text-light{% endif %}" id="thumbs-up-{{ comment.public_id }}"></i></a>
-                    	<span class="mr-1 text-muted" id="thumbs-up-count-{{ comment.public_id }}">{{ comment.likes.count }}</span>
-                    	
-                    	<a class="dislike" name="{{ comment.public_id }}" data-toggle="tooltip" data-html="true" title="{% for usr in comment.dislikes.all %}<span>{{usr.username}}</span><br>{% endfor %}"><i class="fas fa-thumbs-down {% if request.user in comment.dislikes.all %}text-primary{% else %}text-light{% endif %}" id="thumbs-down-{{ comment.public_id }}"></i></a>
-                    	<span class="mr-3 text-muted" id="thumbs-down-count-{{ comment.public_id }}">{{ comment.dislikes.count }}</span>
+                  	<a class="like" name="{{ comment.public_id }}" data-toggle="tooltip" data-html="true" title="{% for user in comment.likes.all %}<span>{{user.username}}</span><br>{% endfor %}"><i class="fas fa-thumbs-up {% if request.user in comment.likes.all %}text-primary{% else %}text-light{% endif %}" id="thumbs-up-{{ comment.public_id }}"></i></a>
+                  	<span class="mr-1 text-muted" id="thumbs-up-count-{{ comment.public_id }}">{{ comment.likes.count }}</span>
+                  	
+                  	<a class="dislike" name="{{ comment.public_id }}" data-toggle="tooltip" data-html="true" title="{% for usr in comment.dislikes.all %}<span>{{usr.username}}</span><br>{% endfor %}"><i class="fas fa-thumbs-down {% if request.user in comment.dislikes.all %}text-primary{% else %}text-light{% endif %}" id="thumbs-down-{{ comment.public_id }}"></i></a>
+                  	<span class="mr-3 text-muted" id="thumbs-down-count-{{ comment.public_id }}">{{ comment.dislikes.count }}</span>
 
-                      <a class="flag" name="{{ comment.public_id }}"><i class="fas fa-flag {% if comment.comment_flags.all %}text-danger{% else %}text-light{% endif %}"></i></a>
-                      <span class="text-muted">{{ comment.comment_flags.all.count }}</span>
-                    
-                    </div>
+                    <a class="flag" name="{{ comment.public_id }}" auth="{{ request.user.is_authenticated }}"><i class="fas fa-flag {% if comment.comment_flags.all %}text-danger{% else %}text-light{% endif %}"></i></a>
+                    <span class="text-muted">{{ comment.comment_flags.all.count }}</span>
+                  
+                  </div>
                 </div>
                 <!-- Reply Modal -->
                 <div class="modal fade" 
@@ -103,11 +105,15 @@
                                 <h5 class="modal-title" id="reply-to">Flag Comment</h5>
                             </div>
                             <div class="modal-body">
-                              <form action="{% url 'flag-comment' comment_id=comment.public_id %}" method="post">
-                                {% csrf_token %}
-                                {{comment_flag_form|crispy}}<br>
-                                <button type="submit" class="btn btn-outline-danger btn-sm">Submit</button>
-                              </form>
+                              {% if request.user.is_authenticated %}
+                                <form action="{% url 'flag-comment' comment_id=comment.public_id %}" method="post">
+                                  {% csrf_token %}
+                                  {{comment_flag_form|crispy}}<br>
+                                  <button type="submit" class="btn btn-outline-danger btn-sm">Submit</button>
+                                </form>
+                              {% else %}
+                                <h4>You must be logged in to flag a comment</h4>
+                              {% endif %}
                             </div>
                         </div>
                     </div>
@@ -129,8 +135,8 @@
 <script>
 $(document).ready(function () {
   $('.reply').click(function(){
-  	modal_id = '#comment_reply_' + $(this).attr('name');
-  	$(modal_id).modal('show');
+    modal_id = '#comment_reply_' + $(this).attr('name');
+    $(modal_id).modal('show');
   });
 });
 </script>
@@ -138,11 +144,16 @@ $(document).ready(function () {
 <script>
 $(document).ready(function () {
   $('.flag').click(function(){
-    modal_id = '#comment_flag_' + $(this).attr('name');
-    $(modal_id).modal('show');
+    if($(this).attr('auth')=='True'){
+      modal_id = '#comment_flag_' + $(this).attr('name');
+      $(modal_id).modal('show');
+    }else {
+      alert('You must be logged in to flag comments')
+    }
   });
 });
 </script>
+
 
 <script>
 $(document).ready(function () {
