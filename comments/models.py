@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from django.db import models
+from django.db.models import UniqueConstraint
 from mptt.models import MPTTModel, TreeForeignKey
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
@@ -67,23 +68,19 @@ class Comment(MPTTModel):
 
 
 class CommentFlags(models.Model):
+    COMMENT_FLAG_REASONS = [('AB', 'Abuse'), ('LA', 'Language'), ('OF', 'Offensive'),
+                            ('OT', 'Other'), ('SP', 'Spam'),]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_flags')
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='comment_flags')
-    COMMENT_FLAG_REASONS = [
-        ('AB', 'Abuse'),
-        ('LA', 'Language'),
-        ('OF', 'Offensive'),
-        ('OT', 'Other'),
-        ('SP', 'Spam'),
-    ]
     reason = models.CharField(max_length=2, choices=COMMENT_FLAG_REASONS, default='OT')
 
     def __str__(self):
-        return str(self.user.username)
+        return str(self.user) + ' | ' + str(self.comment) + ' | ' + str(self.reason)
 
-    # def save(self, *args, **kwargs):
-    #     if not self.id:
-    #         flag_count = CommentFlags.objects.filter(comment=self.comment).count()
-    #         if flag_count == 3:
-    #             comment.visible = False
-    #             comment.save()
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "comment"], name="limit_flags_by_user"
+            )
+        ]
+        verbose_name_plural = 'Comment Flags'

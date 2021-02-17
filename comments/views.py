@@ -1,4 +1,7 @@
+import logging
+logger = logging.getLogger(__name__)
 from django.conf import settings
+from django.db import IntegrityError
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, redirect, get_object_or_404
@@ -7,8 +10,6 @@ from django.http import HttpResponse, JsonResponse
 
 from comments.models import Post, Comment
 from comments.forms import CommentForm, CommentFlagForm
-
-from django.views.decorators.http import require_http_methods
 
 
 @login_required
@@ -21,7 +22,7 @@ def post_comment(request, post_id, parent_comment_id=None):
         new_comment.post = post
         new_comment.user = request.user
 
-        # Secondary response
+        # if this is a reply
         if parent_comment_id:
             parent_comment = get_object_or_404(
                 Comment, public_id=parent_comment_id)
@@ -33,35 +34,30 @@ def post_comment(request, post_id, parent_comment_id=None):
             str(post.get_absolute_url()) 
             + '#comment_' 
             + str(new_comment.public_id)
-            )
+            ) # back to the new comment
     else:
         messages.error(request, 'Something went wrong with your form')
         return redirect(
             str(post.get_absolute_url()) 
             + '#comments'
-            )
+            ) # back to the comments section
 
 
+@login_required
 def comment_edit(request, comment_id, post_id):
     '''Edits existing comment object'''
     post = get_object_or_404(Post, id=post_id)
     comment = get_object_or_404(Comment, public_id=comment_id)
     comment_edit_form = CommentForm(request.POST or None, instance=comment)
+    comment_parent_url = str(post.get_absolute_url()) + '#comment_' + str(comment.parent.public_id)
+    comment_url = str(comment.post.get_absolute_url()) + '#comment_' + str(comment.public_id)
     if request.method == 'POST':
         if comment_edit_form.is_valid():
             comment_edit_form.save()
             if comment.parent: # redirect back to parent comment
-                return redirect( 
-                    str(post.get_absolute_url()) 
-                    + '#comment_' 
-                    + str(comment.parent.public_id)
-                    )
+                return redirect(comment_parent_url)
             else: # or back to the same comment edited
-                return redirect(
-                    str(post.get_absolute_url()) 
-                    + '#comment_' 
-                    + str(comment.public_id)
-                    )
+                return redirect(comment_url)
     context = {
         'comment': comment,
         'comment_edit_form': comment_edit_form,
@@ -69,27 +65,27 @@ def comment_edit(request, comment_id, post_id):
     return render(request, 'comments/edit.html', context)
 
 
+@login_required
 def comment_delete_confirm(request, comment_id, post_id):
     '''Confirms deletion of a comment'''
     post = get_object_or_404(Post, id=post_id)
     comment = get_object_or_404(Comment, public_id=comment_id)
-    next = request.GET.get('next') + '#comments' # comment section just in case
+    comments_section_url = str(post.get_absolute_url()) + '#comments'
+    comment_parent_url = str(post.get_absolute_url()) + '#comment_' + str(comment.parent.public_id)
     if request.method == 'POST':
         comment.delete()
         if comment.parent: # redirect back to parent comment
-            return redirect(
-                str(post.get_absolute_url()) 
-                + '#comment_' 
-                + str(comment.parent.public_id)
-                )
+            return redirect(comment_parent_url)
         else:
-            return redirect(next) # or back to the comments section
+            return redirect(comments_section_url) # or back to the comments section
     context = {
         'comment': comment,
     }
     return render(request, 'comments/delete.html', context)
 
 
+@login_required
+@require_http_methods(["POST"])
 def like_comment(request):
     '''Likes a comment. Called from jquery ajax'''
     liked = None
@@ -145,25 +141,25 @@ def flag_comment(request, comment_id):
     visibility after being flagged'''
     user = request.user
     comment = get_object_or_404(Comment, public_id=comment_id)
-    # how many times has this person flagged this comment
-    user_flag_count = user.comment_flags.all().filter(comment=comment).count()
     comment_flag_form = CommentFlagForm(request.POST or None)
     comment_url = str(comment.post.get_absolute_url()) + '#comment_' + str(comment.public_id)
     comments_section_url = str(comment.post.get_absolute_url()) + '#comments'
-    if user_flag_count >= 3: # if already flagged 3 times redirect with message
-        messages.error(request, 'You already flagged that one enough. Thanks.')
-        return redirect(comment_url)
     if comment_flag_form.is_valid():
-        new_flag = comment_flag_form.save(commit=False)
-        new_flag.user = request.user # add current user
-        new_flag.comment = comment # add specified comment
-        new_flag.save() # comments.signals.comment_check_flag_limit
-        messages.success(request, f'Comment Flagged. Thanks {user.username}!') # message for user
-        comment.refresh_from_db() # see if the signal toggled visibility
-        if comment.visible: # redirect back to comment if still visible
+        try:
+            new_flag = comment_flag_form.save(commit=False)
+            new_flag.user = request.user # add current user
+            new_flag.comment = comment # add specified comment
+            new_flag.save() # comments.signals.comment_check_flag_limit
+            messages.success(request, f'Comment Flagged. Thanks {user.username}!') # message for user
+            comment.refresh_from_db() # see if the signal toggled visibility
+            if comment.visible: # redirect back to comment if still visible
+                return redirect(comment_url)
+            else: # or back to the comments section
+                return redirect(comments_section_url)
+        except IntegrityError as e: # if user has already flagged this comment show message
+            logger.error(e)
+            messages.error(request, 'You already flagged that comment')
             return redirect(comment_url)
-        else: # or back to the comments section
-            return redirect(comments_section_url)
     else: # if form is not valid back to the comment with a message
-        messages.error('Something went wrong, please try again')
+        messages.error('Something went wrong with the form, please try again')
         return redirect(comment_url)
