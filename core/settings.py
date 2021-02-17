@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'crispy_forms',
     'mptt',
     'blog',
     'comments',
@@ -125,3 +126,9 @@ STATICFILES_DIRS = (str(BASE_DIR.joinpath('static')),)
 
 # default is 10 pixels
 MPTT_ADMIN_LEVEL_INDENT = 40
+
+# http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
+CRISPY_TEMPLATE_PACK = "bootstrap4"
+
+# Amount of flags allowed before visibility on comment is changed to False
+COMMENTS_FLAG_LIMIT = 2

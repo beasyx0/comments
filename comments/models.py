@@ -31,11 +31,13 @@ class Comment(MPTTModel):
 
     dislikes = models.ManyToManyField(User, related_name='dislikes', blank=True)
 
+    visible = models.BooleanField(default=True)
+
     class MPTTMeta:
         order_insertion_by = ['created']
 
     def __str__(self):
-        return f'{self.created.strftime("%x")} | {self.user}'
+        return self.content[:100]
 
     def like(self, id):
         user = get_object_or_404(User, id=id)
@@ -62,3 +64,26 @@ class Comment(MPTTModel):
                 return 'disliked and unliked'
             self.dislikes.add(user)
             return 'disliked'
+
+
+class CommentFlags(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_flags')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='comment_flags')
+    COMMENT_FLAG_REASONS = [
+        ('AB', 'Abuse'),
+        ('LA', 'Language'),
+        ('OF', 'Offensive'),
+        ('OT', 'Other'),
+        ('SP', 'Spam'),
+    ]
+    reason = models.CharField(max_length=2, choices=COMMENT_FLAG_REASONS, default='OT')
+
+    def __str__(self):
+        return str(self.user.username)
+
+    # def save(self, *args, **kwargs):
+    #     if not self.id:
+    #         flag_count = CommentFlags.objects.filter(comment=self.comment).count()
+    #         if flag_count == 3:
+    #             comment.visible = False
+    #             comment.save()

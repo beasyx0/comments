@@ -1,5 +1,5 @@
 from django import forms
-from comments.models import Comment
+from comments.models import Comment, CommentFlags
 
 
 class CommentForm(forms.ModelForm):
@@ -7,3 +7,9 @@ class CommentForm(forms.ModelForm):
 	class Meta:
 		model = Comment
 		fields = ('content',)
+
+
+class CommentFlagForm(forms.ModelForm):
+	class Meta:
+		model = CommentFlags
+		fields = ('reason',)

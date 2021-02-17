@@ -1,9 +1,10 @@
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 
 from comments.models import Post, Comment
-from comments.forms import CommentForm
+from comments.forms import CommentForm, CommentFlagForm
 
 
 @login_required
@@ -120,3 +121,28 @@ def dislike_comment(request):
                         "likes_count": likes_count,
                         "dislikes_count": dislikes_count,}, 
                         status=status)
+
+
+def flag_comment(request, comment_id):
+    '''Flags a comment and redirects back'''
+    user = request.user
+    comment = get_object_or_404(Comment, public_id=comment_id)
+    if request.method == 'POST':
+        comment_flag_form = CommentFlagForm(request.POST or None)
+        if comment_flag_form.is_valid():
+            new_flag = comment_flag_form.save(commit=False)
+            new_flag.user = request.user
+            new_flag.comment = comment
+            new_flag.save() # CommentFlags signals run and check flags allowed
+            comment.refresh_from_db() # see if the signal toggled visibility
+            if comment.visible: # if visible back to comment
+                return redirect(
+                    str(comment.post.get_absolute_url()) 
+                    + '#comment_' 
+                    + str(comment.public_id)
+                    )
+            else: # if visible is False back to comments section
+                return redirect(
+                    str(comment.post.get_absolute_url()) 
+                    + '#comments'
+                    )

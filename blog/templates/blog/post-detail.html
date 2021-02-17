@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load mptt_tags %}
+{% load crispy_forms_tags %}
 
 {% block content %}
 <div class="mt-3 mb-3" id="comments">
@@ -11,7 +12,7 @@
 			<form action="{% url 'post-comment' post_id=post.id %}" method="post">
 	    		{% csrf_token %}
 	    		<div class="form-group">
-	    			{{comment_reply_form}}
+	    			{{comment_reply_form|crispy}}
 				</div>
 				<div class="form-group text-center">
 	    			<button type="submit" class="btn btn-outline-danger btn-xl">Submit</button>
@@ -56,10 +57,13 @@
                     <div class="pt-3">
 
                     	<a class="like" name="{{ comment.public_id }}" data-toggle="tooltip" data-html="true" title="{% for user in comment.likes.all %}<span>{{user.username}}</span><br>{% endfor %}"><i class="fas fa-thumbs-up {% if request.user in comment.likes.all %}text-primary{% else %}text-light{% endif %}" id="thumbs-up-{{ comment.public_id }}"></i></a>
-                    	<span class="mr-3 text-muted" id="thumbs-up-count-{{ comment.public_id }}">{{ comment.likes.count }}</span>
+                    	<span class="mr-1 text-muted" id="thumbs-up-count-{{ comment.public_id }}">{{ comment.likes.count }}</span>
                     	
                     	<a class="dislike" name="{{ comment.public_id }}" data-toggle="tooltip" data-html="true" title="{% for usr in comment.dislikes.all %}<span>{{usr.username}}</span><br>{% endfor %}"><i class="fas fa-thumbs-down {% if request.user in comment.dislikes.all %}text-primary{% else %}text-light{% endif %}" id="thumbs-down-{{ comment.public_id }}"></i></a>
-                    	<span class="text-muted" id="thumbs-down-count-{{ comment.public_id }}">{{ comment.dislikes.count }}</span>
+                    	<span class="mr-3 text-muted" id="thumbs-down-count-{{ comment.public_id }}">{{ comment.dislikes.count }}</span>
+
+                      <a class="flag" name="{{ comment.public_id }}" href="#"><i class="fas fa-flag {% if comment.comment_flags.all %}text-danger{% else %}text-light{% endif %}"></i></a>
+                      <span class="text-muted">{{ comment.comment_flags.all.count }}</span>
                     
                     </div>
                 </div>
@@ -79,9 +83,31 @@
                             	<p class="mb-4">{{comment.content}}</p>
                             	<form action="{% url 'comment-reply' post_id=post.id parent_comment_id=comment.public_id %}" method="post">
                             		{% csrf_token %}
-                            		{{comment_reply_form}}
+                            		{{comment_reply_form|crispy}}
                             		<button type="submit" class="btn btn-outline-danger btn-sm">Submit</button>
                             	</form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Flag Modal -->
+                <div class="modal fade" 
+                     id="comment_flag_{{ comment.public_id }}" 
+                     tabindex="-1" 
+                     role="dialog" 
+                     aria-labelledby="reply-to" 
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="reply-to">Flag Comment</h5>
+                            </div>
+                            <div class="modal-body">
+                              <form action="{% url 'flag-comment' comment_id=comment.public_id %}" method="post">
+                                {% csrf_token %}
+                                {{comment_flag_form|crispy}}<br>
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Submit</button>
+                              </form>
                             </div>
                         </div>
                     </div>
@@ -105,6 +131,15 @@ $(document).ready(function () {
   $('.reply').click(function(){
   	modal_id = '#comment_reply_' + $(this).attr('name');
   	$(modal_id).modal('show');
+  });
+});
+</script>
+
+<script>
+$(document).ready(function () {
+  $('.flag').click(function(){
+    modal_id = '#comment_flag_' + $(this).attr('name');
+    $(modal_id).modal('show');
   });
 });
 </script>
