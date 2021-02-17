@@ -131,4 +131,4 @@ MPTT_ADMIN_LEVEL_INDENT = 40
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # Amount of flags allowed before visibility on comment is changed to False
-COMMENTS_FLAG_LIMIT = 2
+COMMENTS_FLAG_LIMIT = 5

@@ -1,0 +1,18 @@
+.messages {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index:999;
+}
+
+#close-messages {
+	z-index:999;
+}
+
+.alert {
+	padding: 10px;
+}
+
+.alert-error {
+	background: #ff4d4d;
+}

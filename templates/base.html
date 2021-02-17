@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
     <head>
@@ -9,9 +10,22 @@
 			<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
 			<!-- Material Design Bootstrap -->
 			<link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">
+			<!-- Comments css -->
+			<link href="{% static 'css/comments.css' %}" rel="stylesheet">
+
 		{% endblock css %}
     </head>
     <body>
+    	{% if messages %}
+		      <div class="messages m-0 p-0 text-center w-100">
+		        {% for message in messages %}
+			        <p class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+			        	{{ message }}
+			        	<a class="ml-2" id="close-messages">X</a>
+			        </p>
+		        {% endfor %}
+		      </div>
+	    {% endif %}
     	<div class="container">
 	    	{% block content %}{% endblock content %}
 	    </div>
@@ -25,12 +39,6 @@
 			<!-- MDB core JavaScript -->
 			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
 	    	
-			{% include "components/my-js.html" %}
-			<script>
-				$(function () {
-				  $('[data-toggle="tooltip"]').tooltip()
-				});
-			</script>
 			<script>
 				function getCookie(name) {
 			        let cookieValue = null;
@@ -49,6 +57,21 @@
 			    }
 			    const csrftoken = getCookie('csrftoken');
 			</script>
+
+			{% include "components/my-js.html" %}
+
+			<script>
+				$('#close-messages').click(function(){
+					$('.messages').hide();
+				});
+			</script>
+
+			<script>
+				$(function () {
+				  $('[data-toggle="tooltip"]').tooltip()
+				});
+			</script>
+			
 	    {% endblock javascript %}
 	    {% block extra_scripts %}
 	    	

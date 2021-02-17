@@ -62,7 +62,7 @@
                     	<a class="dislike" name="{{ comment.public_id }}" data-toggle="tooltip" data-html="true" title="{% for usr in comment.dislikes.all %}<span>{{usr.username}}</span><br>{% endfor %}"><i class="fas fa-thumbs-down {% if request.user in comment.dislikes.all %}text-primary{% else %}text-light{% endif %}" id="thumbs-down-{{ comment.public_id }}"></i></a>
                     	<span class="mr-3 text-muted" id="thumbs-down-count-{{ comment.public_id }}">{{ comment.dislikes.count }}</span>
 
-                      <a class="flag" name="{{ comment.public_id }}" href="#"><i class="fas fa-flag {% if comment.comment_flags.all %}text-danger{% else %}text-light{% endif %}"></i></a>
+                      <a class="flag" name="{{ comment.public_id }}"><i class="fas fa-flag {% if comment.comment_flags.all %}text-danger{% else %}text-light{% endif %}"></i></a>
                       <span class="text-muted">{{ comment.comment_flags.all.count }}</span>
                     
                     </div>
