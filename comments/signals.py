@@ -1,8 +1,9 @@
 from django.conf import settings
 from django.db.models import signals
 from django.dispatch import receiver
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from comments.models import CommentFlags
+
 
 @receiver(signals.post_save, sender=CommentFlags)
 def comment_check_flag_limit(sender, instance, created, **kwargs):
@@ -12,3 +13,10 @@ def comment_check_flag_limit(sender, instance, created, **kwargs):
 		comment = instance.comment
 		comment.visible = False
 		comment.save()
+
+
+@receiver(signals.pre_save, sender=CommentFlags)
+def user_check_flag_limit(sender, instance, **kwargs):
+	if instance.id is None:
+		if instance.user.comment_flags.all().count() >= settings.COMMENTS_USER_FLAG_LIMIT:
+			raise IntegrityError('User has too many flags')

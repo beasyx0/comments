@@ -95,13 +95,12 @@ def like_comment(request):
     status = 400 # if anything fails return bad response
     if request.method == 'POST' and request.is_ajax():
         user = request.user
-        if user.is_authenticated:
-            comment_id = request.POST.get('comment_id', None)
-            comment = get_object_or_404(Comment, public_id=comment_id)
-            liked = comment.like(user.id) # call model method
-            likes_count = comment.likes.count() # send back to front end
-            dislikes_count = comment.dislikes.count()
-            status = 200
+        comment_id = request.POST.get('comment_id', None)
+        comment = get_object_or_404(Comment, public_id=comment_id)
+        liked = comment.like(user.id) # call model method
+        likes_count = comment.likes.count() # send back to front end
+        dislikes_count = comment.dislikes.count()
+        status = 200
     return JsonResponse({"liked": liked, 
                         "comment_id": comment_id,
                         "likes_count": likes_count,
@@ -120,13 +119,12 @@ def dislike_comment(request):
     status = 400 # if anything fails return bad response
     if request.method == 'POST' and request.is_ajax(): # make sure its ajax
         user = request.user
-        if user.is_authenticated:
-            comment_id = request.POST.get('comment_id', None)
-            comment = get_object_or_404(Comment, public_id=comment_id)
-            disliked = comment.dislike(user.id) # call model method
-            likes_count = comment.likes.count() # send back to front end
-            dislikes_count = comment.dislikes.count()
-            status = 200
+        comment_id = request.POST.get('comment_id', None)
+        comment = get_object_or_404(Comment, public_id=comment_id)
+        disliked = comment.dislike(user.id) # call model method
+        likes_count = comment.likes.count() # send back to front end
+        dislikes_count = comment.dislikes.count()
+        status = 200
     return JsonResponse({"disliked": disliked, 
                         "comment_id": comment_id,
                         "likes_count": likes_count,
@@ -156,9 +154,14 @@ def flag_comment(request, comment_id):
                 return redirect(comment_url)
             else: # or back to the comments section
                 return redirect(comments_section_url)
-        except IntegrityError as e: # if user has already flagged this comment show message
-            logger.error(e)
-            messages.error(request, 'You already flagged that comment')
+        except IntegrityError as e: # if user has already flagged this comment show message or is over \
+            logger.error(e)         # the limit for total flags allowed
+            print((str(e)).split(':')[0])
+            if str(e) == 'User has too many flags':
+                messages.error(request, 'You\'ve flagged one too many comments already')
+            if (str(e)).split(':')[0] == 'UNIQUE constraint failed':
+                messages.error(request, 'You\'ve already flagged that comment')
+            
             return redirect(comment_url)
     else: # if form is not valid back to the comment with a message
         messages.error('Something went wrong with the form, please try again')

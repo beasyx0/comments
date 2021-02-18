@@ -132,3 +132,5 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # Amount of flags allowed before visibility on comment is changed to False
 COMMENTS_FLAG_LIMIT = 5
+# Amount of flags a user can have total
+COMMENTS_USER_FLAG_LIMIT = 100
